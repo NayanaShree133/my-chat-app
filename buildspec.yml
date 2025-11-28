@@ -9,6 +9,8 @@ phases:
     runtime-versions:
       nodejs: 18
     commands:
+      - echo "Upgrading npm to latest compatible version..."
+      - npm install -g npm@latest
       - echo "Installing global dependencies..."
       - npm install -g aws-cdk
       
@@ -18,7 +20,7 @@ phases:
       - npm ci
       
       - echo "Installing Lambda dependencies..."
-      - cd lambda && npm install && cd ..
+      - cd lambda && npm ci && cd ..
       
       - echo "Running tests..."
       - npm test || echo "Tests completed with warnings"
