@@ -50,4 +50,8 @@ artifacts:
 cache:
   paths:
     - 'node_modules/**/*'
+<<<<<<< HEAD
     - 'lambda/node_modules/**/*'
+=======
+    - 'lambda/node_modules/**/*'
+>>>>>>> d88f8b3 (updated changes)
