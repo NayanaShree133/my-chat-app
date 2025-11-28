@@ -18,7 +18,7 @@ phases:
       - npm ci
       
       - echo "Installing Lambda dependencies..."
-      - cd lambda && npm ci && cd ..
+      - cd lambda && npm install && cd ..
       
       - echo "Running tests..."
       - npm test || echo "Tests completed with warnings"
