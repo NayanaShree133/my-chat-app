@@ -1,61 +1,59 @@
-# buildspec.yml - Instructions for CodeBuild
-
 version: 0.2
 
-# Environment variables
 env:
   variables:
-    # Can add variables here
     NODE_ENV: production
 
-# Build phases
 phases:
-  # Phase 1: Install dependencies
   install:
     runtime-versions:
       nodejs: 18
     commands:
       - echo "Installing dependencies..."
-      - npm install
-      - cd lambda && npm install && cd ..
-      - npm install -g aws-cdk
 
-  # Phase 2: Pre-build (optional - run tests)
+      # Install CDK and TypeScript globally
+      - npm install -g aws-cdk typescript
+
+      # Install root project dependencies
+      - npm install
+
+      # Install Lambda function dependencies
+      - cd lambda && npm install && cd ..
+
   pre_build:
     commands:
       - echo "Running tests..."
-      - npm test || true  # Continue even if tests fail (for demo)
+      - npm test || true
       - echo "Tests completed"
 
-  # Phase 3: Build
   build:
     commands:
       - echo "Building application..."
-      - npm run build
-      
+
+      # Compile TypeScript → JS
+      - npx tsc
+
       - echo "Synthesizing CDK stacks..."
-      # Create Dev stack template
-      - cdk synth -o cdk.out ChatAppDevStack
-      
-      # Create Prod stack template
-      - cdk synth -o cdk.out ChatAppProdStack
-      
+
+      # Generate Dev Template
+      - npx cdk synth -o cdk.out ChatAppDevStack
+
+      # Generate Prod Template
+      - npx cdk synth -o cdk.out ChatAppProdStack
+
       - echo "Build completed successfully"
 
-  # Phase 4: Post-build (optional - cleanup)
   post_build:
     commands:
       - echo "Build finished on `date`"
 
-# Output artifacts
 artifacts:
-  files:
-    - '**/*'
   base-directory: cdk.out
+  files:
+    - "**/*"
   name: BuildArtifact
 
-# Cache dependencies for faster builds
 cache:
   paths:
-    - 'node_modules/**/*'
-    - 'lambda/node_modules/**/*'
+    - "node_modules/**/*"
+    - "lambda/node_modules/**/*"
