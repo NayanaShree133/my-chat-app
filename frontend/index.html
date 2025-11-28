@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Chat App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chat-container {
+            width: 90%;
+            max-width: 600px;
+            height: 80vh;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .login-container {
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            justify-content: center;
+            flex: 1;
+        }
+
+        .login-container h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .login-container input {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .login-container input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .login-container button {
+            padding: 15px;
+            background: #ead266;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .login-container button:hover {
+            background: #5568d3;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 12px;
+            max-width: 70%;
+            word-wrap: break-word;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.own {
+            background: #667eea;
+            color: white;
+            align-self: flex-end;
+        }
+
+        .message.other {
+            background: #f0f0f0;
+            color: #333;
+            align-self: flex-start;
+        }
+
+        .message-username {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 4px;
+            opacity: 0.8;
+        }
+
+        .message-text {
+            font-size: 14px;
+        }
+
+        .message-time {
+            font-size: 10px;
+            margin-top: 4px;
+            opacity: 0.6;
+        }
+
+        .input-container {
+            padding: 20px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-container input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .input-container input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-container button {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .input-container button:hover {
+            background: #5568d3;
+        }
+
+        .input-container button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            background: #ff4444;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">My Chat App</div>
+        
+        <div class="error-message" id="errorMessage"></div>
+
+        <!-- Login Screen -->
+        <div class="login-container" id="loginContainer">
+            <h2>Enter Your Name</h2>
+            <input type="text" id="usernameInput" placeholder="Your name..." maxlength="20">
+            <button onclick="login()">Join Chat</button>
+        </div>
+
+        <!-- Chat Screen -->
+        <div class="messages-container hidden" id="messagesContainer">
+            <div class="loading" id="loading">Loading messages...</div>
+        </div>
+
+        <div class="input-container hidden" id="inputContainer">
+            <input type="text" id="messageInput" placeholder="Type a message..." maxlength="500">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ IMPORTANT: Replace this with your actual  API URL from CDK output
+        const API_URL =  'https://b9x8w8wqag.execute-api.us-east-1.amazonaws.com/prod/messages';
+        
+        let currentUsername = '';
+        let messagePollingInterval;
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+            setTimeout(() => errorDiv.classList.remove('show'), 5000);
+        }
+
+        function login() {
+            const username = document.getElementById('usernameInput').value.trim();
+            if (!username) {
+                showError('Please enter your name');
+                return;
+            }
+
+            currentUsername = username;
+            document.getElementById('loginContainer').classList.add('hidden');
+            document.getElementById('messagesContainer').classList.remove('hidden');
+            document.getElementById('inputContainer').classList.remove('hidden');
+
+            loadMessages();
+            startPolling();
+        }
+
+        async function loadMessages() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                displayMessages(data.messages || []);
+                document.getElementById('loading').style.display = 'none';
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                showError('Failed to load messages. Check console for details.');
+                document.getElementById('loading').textContent = 'Failed to load messages';
+            }
+        }
+
+        function displayMessages(messages) {
+            const container = document.getElementById('messagesContainer');
+            const loading = document.getElementById('loading');
+            
+            // Remove all messages except loading indicator
+            const messageDivs = container.querySelectorAll('.message');
+            messageDivs.forEach(div => div.remove());
+
+            messages.forEach(msg => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${msg.username === currentUsername ? 'own' : 'other'}`;
+                
+                const time = new Date(msg.timestamp).toLocaleTimeString();
+                
+                messageDiv.innerHTML = `
+                    <div class="message-username">${msg.username}</div>
+                    <div class="message-text">${escapeHtml(msg.message)}</div>
+                    <div class="message-time">${time}</div>
+                `;
+                
+                container.appendChild(messageDiv);
+            });
+
+            // Scroll to bottom
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            const button = event.target;
+            button.disabled = true;
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message,
+                        username: currentUsername,
+                    }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+
+                input.value = '';
+                await loadMessages();
+            } catch (error) {
+                console.error('Error sending message:', error);
+                showError('Failed to send message: ' + error.message);
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        function startPolling() {
+            // Poll for new messages every 3 seconds
+            messagePollingInterval = setInterval(loadMessages, 3000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Send message on Enter key
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('messageInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            document.getElementById('usernameInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    login();
+                }
+            });
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (messagePollingInterval) {
+                clearInterval(messagePollingInterval);
+            }
+        });
+    </script>
+</body>
+</html>
