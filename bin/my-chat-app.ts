@@ -42,8 +42,8 @@ new PipelineStack(app, 'ChatAppPipelineStack', {
   },
   
   // 🔧 CONFIGURE THESE:
-  githubOwner: 'YOUR_GITHUB_USERNAME',        // Replace with your username
+  githubOwner: 'NayanaShree133',        // Replace with your username
   githubRepo: 'my-chat-app',                  // Replace with your repo name
   githubBranch: 'main',                       // Or 'master'
-  approverEmail: 'your-email@example.com',    // Replace with your email
+  approverEmail: 'nayanas133@gmail.com',    // Replace with your email
 });
