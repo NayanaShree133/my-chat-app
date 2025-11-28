@@ -10,7 +10,6 @@ phases:
       nodejs: 18
     commands:
       - echo "Upgrading npm to latest compatible version..."
-      - npm install -g npm@latest
       - echo "Installing global dependencies..."
       - npm install -g aws-cdk
       
