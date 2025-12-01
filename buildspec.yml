@@ -15,7 +15,7 @@ phases:
   pre_build:
     commands:
       - echo "Installing project dependencies..."
-      - npm ci
+      - npm install
       
       - echo "Installing Lambda dependencies..."
       - cd lambda && npm install && cd ..
@@ -50,8 +50,6 @@ artifacts:
 cache:
   paths:
     - 'node_modules/**/*'
-<<<<<<< HEAD
     - 'lambda/node_modules/**/*'
-=======
-    - 'lambda/node_modules/**/*'
->>>>>>> d88f8b3 (updated changes)
+
+  
