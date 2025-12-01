@@ -5,34 +5,38 @@ phases:
     runtime-versions:
       nodejs: 18
     commands:
-      - echo "Installing global tools..."
-      - npm install -g typescript aws-cdk
+      - echo "Installing CDK CLI and tools..."
+      - npm install -g typescript aws-cdk@latest
       
   pre_build:
     commands:
-      - echo "Installing dependencies..."
-      - npm install
+      - echo "Installing root dependencies..."
+      - npm ci
       - echo "Installing Lambda dependencies..."
-      - cd lambda && npm install && cd ..
+      - cd lambda && npm ci && cd ..
       - echo "Running tests..."
-      - npm test || echo "Tests done"
+      - npm test || echo "Tests completed"
 
   build:
     commands:
       - echo "Building TypeScript..."
       - npm run build
+      
       - echo "Synthesizing stacks..."
-      - cdk synth
-      - echo "Listing cdk.out contents..."
+      - npx cdk synth --all
+      
+      - echo "Publishing assets to S3..."
+      - npx cdk-assets publish --path cdk.out/ChatAppDevStack.assets.json --verbose
+      - npx cdk-assets publish --path cdk.out/ChatAppProdStack.assets.json --verbose
+      
+      - echo "Listing synthesized files..."
       - ls -la cdk.out/
-      - find cdk.out -type f | head -20
 
 artifacts:
   base-directory: cdk.out
   files:
     - '**/*'
-  name: CDKArtifacts
-  
+
 cache:
   paths:
     - 'node_modules/**/*'
