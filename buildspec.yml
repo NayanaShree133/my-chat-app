@@ -12,20 +12,28 @@ phases:
     commands:
       - echo "Installing dependencies..."
       - npm install
+      - echo "Installing Lambda dependencies..."
       - cd lambda && npm install && cd ..
       - echo "Running tests..."
       - npm test || echo "Tests done"
 
   build:
     commands:
-      - echo "Building..."
-      - tsc
+      - echo "Building TypeScript..."
+      - npm run build
       - echo "Synthesizing stacks..."
-      - cdk synth ChatAppDevStack -o cdk.out
-      - cdk synth ChatAppProdStack -o cdk.out
+      - cdk synth
+      - echo "Listing cdk.out contents..."
       - ls -la cdk.out/
+      - find cdk.out -type f | head -20
 
 artifacts:
+  base-directory: cdk.out
   files:
     - '**/*'
-  base-directory: cdk.out
+  name: CDKArtifacts
+  
+cache:
+  paths:
+    - 'node_modules/**/*'
+    - 'lambda/node_modules/**/*'
