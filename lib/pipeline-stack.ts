@@ -5,7 +5,6 @@ import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as sns from 'aws-cdk-lib/aws-sns';
 import * as sns_subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
-import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 
 interface PipelineStackProps extends cdk.StackProps {
@@ -56,38 +55,6 @@ export class PipelineStack extends cdk.Stack {
       cache: codebuild.Cache.local(codebuild.LocalCacheMode.SOURCE),
     });
 
-    // 🔧 FIX: Add permissions for asset publishing
-    buildProject.addToRolePolicy(new iam.PolicyStatement({
-      effect: iam.Effect.ALLOW,
-      actions: [
-        's3:PutObject',
-        's3:GetObject',
-        's3:ListBucket',
-        's3:DeleteObject',
-        's3:GetBucketLocation',
-      ],
-      resources: [
-        'arn:aws:s3:::cdk-*-assets-*',
-        'arn:aws:s3:::cdk-*-assets-*/*',
-      ],
-    }));
-
-    // 🔧 FIX: Add ECR permissions (for Docker assets if needed)
-    buildProject.addToRolePolicy(new iam.PolicyStatement({
-      effect: iam.Effect.ALLOW,
-      actions: [
-        'ecr:GetAuthorizationToken',
-        'ecr:BatchCheckLayerAvailability',
-        'ecr:GetDownloadUrlForLayer',
-        'ecr:BatchGetImage',
-        'ecr:PutImage',
-        'ecr:InitiateLayerUpload',
-        'ecr:UploadLayerPart',
-        'ecr:CompleteLayerUpload',
-      ],
-      resources: ['*'],
-    }));
-
     const buildAction = new codepipeline_actions.CodeBuildAction({
       actionName: 'Build_and_Test',
       project: buildProject,
@@ -95,15 +62,12 @@ export class PipelineStack extends cdk.Stack {
       outputs: [buildOutput],
     });
 
-    // 🔧 FIX: Deploy Dev Action with asset support
+    // Deploy Dev Action
     const deployDevAction = new codepipeline_actions.CloudFormationCreateUpdateStackAction({
       actionName: 'Deploy_to_Dev',
       stackName: 'ChatAppDevStack',
-      templatePath: buildOutput.atPath('ChatAppDevStack.template.json'),
+      templatePath: buildOutput.atPath('ChatAppDevStack.template.json'),  
       adminPermissions: true,
-      // 🔧 CRITICAL: Add this to pass asset parameters
-      parameterOverrides: {},
-      extraInputs: [buildOutput], // Ensures assets are available
     });
 
     // Manual Approval
@@ -113,15 +77,12 @@ export class PipelineStack extends cdk.Stack {
       additionalInformation: 'Please review the dev deployment and approve for production',
     });
 
-    // 🔧 FIX: Deploy Prod Action with asset support
+    // Deploy Prod Action
     const deployProdAction = new codepipeline_actions.CloudFormationCreateUpdateStackAction({
       actionName: 'Deploy_to_Production',
       stackName: 'ChatAppProdStack',
-      templatePath: buildOutput.atPath('ChatAppProdStack.template.json'),
+      templatePath: buildOutput.atPath('ChatAppProdStack.template.json'),  
       adminPermissions: true,
-      // 🔧 CRITICAL: Add this to pass asset parameters
-      parameterOverrides: {},
-      extraInputs: [buildOutput], // Ensures assets are available
     });
 
     // Create Pipeline
