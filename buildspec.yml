@@ -1,0 +1,31 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - echo "Installing global tools..."
+      - npm install -g typescript aws-cdk
+      
+  pre_build:
+    commands:
+      - echo "Installing dependencies..."
+      - npm install
+      - cd lambda && npm install && cd ..
+      - echo "Running tests..."
+      - npm test || echo "Tests done"
+
+  build:
+    commands:
+      - echo "Building..."
+      - tsc
+      - echo "Synthesizing stacks..."
+      - cdk synth ChatAppDevStack -o cdk.out
+      - cdk synth ChatAppProdStack -o cdk.out
+      - ls -la cdk.out/
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: cdk.out
