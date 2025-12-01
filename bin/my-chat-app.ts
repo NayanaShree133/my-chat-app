@@ -39,4 +39,7 @@ new PipelineStack(app, 'ChatAppPipelineStack', {
   githubRepo: 'my-chat-app',
   githubBranch: 'main',
   approverEmail: 'nayanas133@gmail.com',
+
 });
+
+
